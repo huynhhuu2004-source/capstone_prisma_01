@@ -37,4 +37,9 @@ export const userController = {
          const response = responseSucess(result, `update info successfully`);
          res.status(response.statuscode).json(response);
    },
+    async uploadImages(req, res, next) {
+         const result = await userService.uploadImages(req);
+         const response = responseSucess(result, `upload images successfully`);
+         res.status(response.statuscode).json(response);
+   },
 };

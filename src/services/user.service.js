@@ -1,5 +1,10 @@
 import { BadRequestException } from "../common/helpers/exception.helpers.js";
 import { prisma } from "../common/prisma/conect.prisma.js";
+import {v2 as cloudinary} from 'cloudinary' 
+
+cloudinary.config({
+   secure: true , // true : https , false:http
+})
 
 export const userService = {
    async getUser(req) {
@@ -87,5 +92,40 @@ export const userService = {
     });
 
     return updatedUser;
+   },
+
+   async uploadImages(req){
+    const {nguoi_dung_id} = req.user;
+    const { ten_hinh, duong_dan, mo_ta } = req.body;
+
+    //chưa chọn file báo lỗi 
+    if(!req.file){
+        throw new BadRequestException("Vui lòng chọn ảnh ");
+    }
+
+    const uploadResult = await new Promise((resolve, reject) => {
+         // phải import cloud
+         // thêm đường dẫn folder khi lưu trên cloud 
+         // Upload Stream
+         cloudinary.uploader.upload_stream({folder:"nodejs56"},(error, uploadResult) => { 
+            if (error) {
+                  return reject(error);
+            }
+            return resolve(uploadResult);
+         }).end(req.file.buffer); // sửa lại buffer truyền vào 
+      });
+        
+      console.log({"uploadResult": uploadResult})
+
+        await prisma.hinh_anh.create({
+          data:{ 
+            ten_hinh:ten_hinh,
+            duong_dan:uploadResult.public_id,
+            mo_ta:mo_ta,
+            nguoi_dung_id: Number(nguoi_dung_id)
+          }
+      });
+
+      return uploadResult.secure_url;
    }
 };
